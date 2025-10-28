@@ -31,13 +31,15 @@ export class MailboxApiStack extends cdk.Stack {
     // ============================================
     // LAMBDA LAYER (Shared Dependencies)
     // ============================================
-    // Placeholder - will be populated with node_modules in future commits
-    const sharedLayer = new lambda.LayerVersion(this, 'SharedLayer', {
-      layerVersionName: `${props.targetEnvironment}-mailbox-api-shared`,
-      code: lambda.Code.fromInline('// Placeholder for shared dependencies'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
-      description: 'Shared dependencies for mailbox API Lambda functions',
-    });
+    // TODO: Create actual Lambda layer with packaged dependencies
+    // For now, Lambda functions will package their own dependencies
+    // Uncomment and create proper layer asset when ready:
+    // const sharedLayer = new lambda.LayerVersion(this, 'SharedLayer', {
+    //   layerVersionName: `${props.targetEnvironment}-mailbox-api-shared`,
+    //   code: lambda.Code.fromAsset('layers/nodejs'),
+    //   compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+    //   description: 'Shared dependencies for mailbox API Lambda functions',
+    // });
 
     // ============================================
     // COMMON LAMBDA CONFIGURATION
@@ -61,7 +63,7 @@ export class MailboxApiStack extends cdk.Stack {
       },
       securityGroups: [props.lambdaSecurityGroup],
       logRetention: logs.RetentionDays.ONE_MONTH,
-      layers: [sharedLayer],
+      // layers: [sharedLayer], // Add when layer is created
     };
 
     // ============================================

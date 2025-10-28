@@ -27,9 +27,9 @@ export class MailboxDbStack extends cdk.Stack {
     // ============================================
     // VPC LOOKUP (Import existing VPC)
     // ============================================
-    // Use existing VPC from Portal/conductor infrastructure
+    // Use Control Tower created VPC (first non-default VPC)
     this.vpc = ec2.Vpc.fromLookup(this, 'ExistingVPC', {
-      vpcName: isProd ? 'prod-vpc' : 'dev-vpc',
+      isDefault: false,
     });
 
     // ============================================

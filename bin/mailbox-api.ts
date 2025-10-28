@@ -9,15 +9,20 @@ import { MailboxApiStack } from '../lib/mailbox-api-stack';
 
 const app = new cdk.App();
 
+// Get the target environment from context or environment variables
+const targetEnv = app.node.tryGetContext('target-env') || process.env.TARGET_ENV || 'dev';
+
 // Account configurations
 const DEV_ACCOUNT = "484907522964";
 const PROD_ACCOUNT = "794038237156";
 const REGION = "ca-central-1";
 
-// ============================================
-// DEVELOPMENT PIPELINE
-// ============================================
-const devPipeline = new PipelineStack(app, 'dev-mailbox-api-pipeline', {
+// Determine which pipeline to create based on target environment
+if (targetEnv === 'dev' || targetEnv === 'development') {
+  // ============================================
+  // DEVELOPMENT PIPELINE
+  // ============================================
+  const devPipeline = new PipelineStack(app, 'dev-mailbox-api-pipeline', {
   branch: "develop",
   codeconnectionArn: "arn:aws:codeconnections:ca-central-1:484907522964:connection/64a3746c-a26c-410a-8acc-1741c50813be",
   env: {
@@ -70,13 +75,13 @@ const devPipeline = new PipelineStack(app, 'dev-mailbox-api-pipeline', {
     cdk.Tags.of(apiStack).add('Component', 'mailbox-api');
     cdk.Tags.of(apiStack).add('Environment', 'Development');
   },
-});
-cdk.Tags.of(devPipeline).add('Component', 'mailbox-api-pipeline');
-
-// ============================================
-// PRODUCTION PIPELINE
-// ============================================
-const prodPipeline = new PipelineStack(app, 'prod-mailbox-api-pipeline', {
+  });
+  cdk.Tags.of(devPipeline).add('Component', 'mailbox-api-pipeline');
+} else if (targetEnv === 'prod' || targetEnv === 'production') {
+  // ============================================
+  // PRODUCTION PIPELINE
+  // ============================================
+  const prodPipeline = new PipelineStack(app, 'prod-mailbox-api-pipeline', {
   branch: "main",
   codeconnectionArn: "arn:aws:codeconnections:ca-central-1:794038237156:connection/TBD", // TODO: Get prod CodeConnection ARN
   env: {
@@ -129,5 +134,8 @@ const prodPipeline = new PipelineStack(app, 'prod-mailbox-api-pipeline', {
     cdk.Tags.of(apiStack).add('Component', 'mailbox-api');
     cdk.Tags.of(apiStack).add('Environment', 'Production');
   },
-});
-cdk.Tags.of(prodPipeline).add('Component', 'mailbox-api-pipeline');
+  });
+  cdk.Tags.of(prodPipeline).add('Component', 'mailbox-api-pipeline');
+} else {
+  throw new Error(`Unknown target environment: ${targetEnv}. Use 'dev' or 'prod'`);
+}
