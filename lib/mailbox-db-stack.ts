@@ -128,7 +128,7 @@ export class MailboxDbStack extends cdk.Stack {
       serverlessV2MinCapacity: isProd ? 1 : 0.5,  // Dev: 0.5 ACU min, Prod: 1 ACU min
       serverlessV2MaxCapacity: isProd ? 4 : 1,    // Dev: 1 ACU max, Prod: 4 ACU max
       writer: rds.ClusterInstance.serverlessV2('Writer', {
-        instanceIdentifier: `${props.targetEnvironment}-mail-writer`,
+        // instanceIdentifier removed - CDK auto-generates (allows CloudFormation to replace)
         publiclyAccessible: false,
         enablePerformanceInsights: true, // FIXED: Enable in all environments (was backwards)
         performanceInsightRetention: isProd
@@ -137,7 +137,7 @@ export class MailboxDbStack extends cdk.Stack {
       }),
       readers: isProd ? [
         rds.ClusterInstance.serverlessV2('Reader', {
-          instanceIdentifier: `${props.targetEnvironment}-mail-reader`,
+          // instanceIdentifier removed - CDK auto-generates (allows CloudFormation to replace)
           publiclyAccessible: false,
           enablePerformanceInsights: true,
           performanceInsightRetention: rds.PerformanceInsightRetention.DEFAULT,
