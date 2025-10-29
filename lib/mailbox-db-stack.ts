@@ -120,6 +120,7 @@ export class MailboxDbStack extends cdk.Stack {
       },
       cloudwatchLogsExports: ['error', 'general', 'slowquery'],
       cloudwatchLogsRetention: logs.RetentionDays.ONE_MONTH,
+      storageEncrypted: true, // Required by NIST controls
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
       deletionProtection: isProd,
     });
