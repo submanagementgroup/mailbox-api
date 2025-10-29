@@ -96,31 +96,37 @@ export class MailboxDbStack extends cdk.Stack {
         version: rds.AuroraMysqlEngineVersion.VER_3_08_0, // MySQL 8.0.39 compatible (Portal uses this)
       }),
       credentials: rds.Credentials.fromSecret(this.dbSecret),
-      writer: rds.ClusterInstance.serverlessV2('Writer', {
-        instanceIdentifier: `${props.targetEnvironment}-mail-writer`,
-        publiclyAccessible: false,
-      }),
-      readers: isProd ? [
-        rds.ClusterInstance.serverlessV2('Reader', {
-          instanceIdentifier: `${props.targetEnvironment}-mail-reader`,
-          publiclyAccessible: false,
-        }),
-      ] : [],
-      serverlessV2MinCapacity: isProd ? 1 : 0.5,
-      serverlessV2MaxCapacity: isProd ? 4 : 1,
+      defaultDatabaseName: 'email_platform',
       vpc: this.vpc,
       vpcSubnets: {
         subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
       },
       securityGroups: [this.dbSecurityGroup],
-      defaultDatabaseName: 'email_platform',
+      serverlessV2MinCapacity: isProd ? 1 : 0.5,  // Dev: 0.5 ACU min, Prod: 1 ACU min
+      serverlessV2MaxCapacity: isProd ? 4 : 1,    // Dev: 1 ACU max, Prod: 4 ACU max
+      writer: rds.ClusterInstance.serverlessV2('Writer', {
+        instanceIdentifier: `${props.targetEnvironment}-mail-writer`,
+        publiclyAccessible: false,
+        enablePerformanceInsights: !isProd, // Enable in dev for testing
+        performanceInsightRetention: isProd ? undefined : rds.PerformanceInsightRetention.DEFAULT,
+      }),
+      readers: isProd ? [
+        rds.ClusterInstance.serverlessV2('Reader', {
+          instanceIdentifier: `${props.targetEnvironment}-mail-reader`,
+          publiclyAccessible: false,
+          enablePerformanceInsights: true,
+          performanceInsightRetention: rds.PerformanceInsightRetention.DEFAULT,
+        }),
+      ] : [],
+      monitoringInterval: cdk.Duration.seconds(60), // Required by NIST CT.RDS.PR.2
       backup: {
-        retention: cdk.Duration.days(isProd ? 30 : 7),
-        preferredWindow: '03:00-04:00',
+        retention: isProd ? cdk.Duration.days(30) : cdk.Duration.days(7),
+        preferredWindow: '08:00-09:00', // 3-4 AM Toronto (EST = UTC-5)
       },
+      preferredMaintenanceWindow: 'sun:09:00-sun:10:00', // 4-5 AM Toronto on Sunday (EST = UTC-5)
       cloudwatchLogsExports: ['error', 'general', 'slowquery'],
       cloudwatchLogsRetention: logs.RetentionDays.ONE_MONTH,
-      storageEncrypted: true, // Required by NIST controls
+      storageEncrypted: true, // Required by NIST CT.RDS.PR.16
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
       deletionProtection: isProd,
     });
