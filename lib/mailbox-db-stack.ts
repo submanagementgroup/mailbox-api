@@ -93,7 +93,7 @@ export class MailboxDbStack extends cdk.Stack {
     // ============================================
     this.dbCluster = new rds.DatabaseCluster(this, 'AuroraCluster', {
       engine: rds.DatabaseClusterEngine.auroraMysql({
-        version: rds.AuroraMysqlEngineVersion.VER_3_05_2,
+        version: rds.AuroraMysqlEngineVersion.VER_3_08_0, // MySQL 8.0.39 compatible (Portal uses this)
       }),
       credentials: rds.Credentials.fromSecret(this.dbSecret),
       writer: rds.ClusterInstance.serverlessV2('Writer', {
