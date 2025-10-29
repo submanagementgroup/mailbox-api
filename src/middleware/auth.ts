@@ -36,7 +36,18 @@ export async function authenticate(event: any): Promise<UserContext> {
     throw new Error('Invalid authorization header format');
   }
 
-  // Validate token
+  // Dev mode bypass: Check for DEV_TOKEN_BYPASS
+  if (token === 'DEV_TOKEN_BYPASS' && process.env.ENVIRONMENT === 'local') {
+    console.log('🔓 Dev mode: Bypassing Azure Entra validation');
+    return {
+      entraId: 'dev-user-id',
+      email: 'matt@submanagementgroup.com',
+      name: 'Matt Chadburn (Dev Mode)',
+      roles: ['SYSTEM_ADMIN'], // Full access for testing
+    };
+  }
+
+  // Production: Validate token with Azure Entra
   const payload = await validateToken(token);
   return extractUserContext(payload);
 }
