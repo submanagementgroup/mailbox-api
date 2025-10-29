@@ -187,42 +187,36 @@ export class MailboxDbStack extends cdk.Stack {
     this.redisCluster.addDependency(redisSubnetGroup);
 
     // ============================================
-    // OUTPUTS
+    // OUTPUTS (No exports - stacks pass direct references)
     // ============================================
     new cdk.CfnOutput(this, 'DatabaseEndpoint', {
       value: this.dbCluster.clusterEndpoint.hostname,
       description: 'Aurora database cluster endpoint',
-      exportName: `${props.targetEnvironment}-mail-db-endpoint`,
     });
 
     new cdk.CfnOutput(this, 'DatabaseName', {
       value: 'email_platform',
       description: 'Database name',
-      exportName: `${props.targetEnvironment}-mail-db-name`,
     });
 
     new cdk.CfnOutput(this, 'DatabaseSecretArn', {
       value: this.dbSecret.secretArn,
       description: 'ARN of database credentials secret',
-      exportName: `${props.targetEnvironment}-mail-db-secret-arn`,
     });
 
     new cdk.CfnOutput(this, 'RedisEndpoint', {
       value: this.redisCluster.attrRedisEndpointAddress,
       description: 'Redis endpoint address',
-      exportName: `${props.targetEnvironment}-mail-redis-endpoint`,
     });
 
     new cdk.CfnOutput(this, 'RedisPort', {
       value: this.redisCluster.attrRedisEndpointPort,
       description: 'Redis endpoint port',
-      exportName: `${props.targetEnvironment}-mail-redis-port`,
     });
 
     new cdk.CfnOutput(this, 'LambdaSecurityGroupId', {
       value: this.lambdaSecurityGroup.securityGroupId,
       description: 'Security group ID for Lambda functions',
-      exportName: `${props.targetEnvironment}-mail-lambda-sg-id`,
     });
   }
 }

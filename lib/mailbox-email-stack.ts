@@ -171,19 +171,16 @@ exports.handler = async (event) => {
     new cdk.CfnOutput(this, 'EmailBucketName', {
       value: this.emailBucket.bucketName,
       description: 'S3 bucket for received emails',
-      exportName: `${props.targetEnvironment}-mailbox-email-bucket`,
     });
 
     new cdk.CfnOutput(this, 'EmailProcessorArn', {
       value: this.emailProcessorFunction.functionArn,
       description: 'Email processor Lambda function ARN',
-      exportName: `${props.targetEnvironment}-mailbox-email-processor-arn`,
     });
 
     new cdk.CfnOutput(this, 'SESIdentityName', {
       value: props.mailDomain,
       description: 'SES email identity (domain)',
-      exportName: `${props.targetEnvironment}-mailbox-ses-identity`,
     });
 
     new cdk.CfnOutput(this, 'DKIMRecords', {

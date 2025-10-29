@@ -357,19 +357,16 @@ exports.handler = async (event) => {
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: this.api.url,
       description: 'API Gateway URL',
-      exportName: `${props.targetEnvironment}-mailbox-api-url`,
     });
 
     new cdk.CfnOutput(this, 'ApiId', {
       value: this.api.restApiId,
       description: 'API Gateway ID',
-      exportName: `${props.targetEnvironment}-mailbox-api-id`,
     });
 
     new cdk.CfnOutput(this, 'AuthorizerFunctionArn', {
       value: this.authorizerFunction.functionArn,
       description: 'JWT Authorizer Lambda ARN',
-      exportName: `${props.targetEnvironment}-mailbox-authorizer-arn`,
     });
   }
 }
