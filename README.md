@@ -244,6 +244,187 @@ Required for deployment (stored in Secrets Manager):
 
 ---
 
+## Local Development
+
+### Quick Start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/submanagementgroup/mailbox-api.git
+cd mailbox-api
+
+# 2. Install dependencies
+npm install
+
+# 3. Set up environment variables
+cp .env.example .env.local
+
+# 4. Get database password from AWS Secrets Manager
+npm run get-db-password
+# Copy the password and add to .env.local as DB_PASSWORD
+
+# 5. Start local development server
+npm run dev
+
+# Server runs at http://localhost:3001 with hot-reload
+```
+
+### Local Development Server
+
+The local development server (`npm run dev`) runs an Express wrapper around Lambda handlers:
+
+**Features**:
+- ✅ Hot-reload: Edit handlers and save → Server auto-restarts
+- ✅ Real AWS services: Connects to deployed Aurora, Redis, SES, S3
+- ✅ Mock auth: Bypasses Azure Entra (user: matt@submanagementgroup.com)
+- ✅ CORS enabled for frontend at localhost:3000
+- ✅ All routes available
+
+**How it works**:
+- Wraps Lambda handlers as Express routes
+- Uses `ts-node-dev` for automatic TypeScript compilation and restart
+- Reads `.env.local` for environment variables
+- Mocks Lambda event structure from Express request
+- Returns Lambda response as Express JSON
+
+**Environment Setup**:
+
+```bash
+# .env.local (required variables)
+DB_HOST=dev-mailbox-api-deployment-d-auroracluster23d869c0-qicpu0y8rf5e.cluster-cby4imkui7pd.ca-central-1.rds.amazonaws.com
+DB_PORT=3306
+DB_NAME=email_platform
+DB_USERNAME=mailadmin
+DB_PASSWORD=<from-secrets-manager>  # Run: npm run get-db-password
+DB_SECRET_ARN=arn:aws:secretsmanager:ca-central-1:484907522964:secret:dev/mail-platform/db-xYLUF7
+
+REDIS_HOST=dev-mail-redis.gzoje6.0001.cac1.cache.amazonaws.com
+REDIS_PORT=6379
+
+AWS_REGION=ca-central-1
+EMAIL_BUCKET=dev-mailbox-emails-484907522964
+
+ENVIRONMENT=local
+NODE_ENV=development
+```
+
+### Available Endpoints
+
+When running `npm run dev`, test with curl or your frontend:
+
+```bash
+# Health check
+curl http://localhost:3001/health
+
+# List mailboxes (mock SYSTEM_ADMIN user)
+curl http://localhost:3001/mailboxes
+
+# Get messages
+curl http://localhost:3001/mailboxes/1/messages
+
+# Get single message
+curl http://localhost:3001/mailboxes/1/messages/1
+
+# Reply to message
+curl -X POST http://localhost:3001/mailboxes/1/messages/1/reply \
+  -H "Content-Type: application/json" \
+  -d '{"body": "Test reply", "subject": "Re: Test"}'
+
+# Create forwarding rule
+curl -X POST http://localhost:3001/mailboxes/1/forwarding \
+  -H "Content-Type: application/json" \
+  -d '{"recipientEmail": "user@example.com", "isEnabled": true}'
+
+# Create user (admin)
+curl -X POST http://localhost:3001/admin/users \
+  -H "Content-Type: application/json" \
+  -d '{"email": "newuser@example.com", "displayName": "New User", "role": "CLIENT_USER"}'
+```
+
+### Hot-Reload Workflow
+
+1. Edit any file in `src/handlers/`, `src/services/`, `src/middleware/`
+2. Save the file
+3. Server automatically restarts (~1 second)
+4. Test your changes immediately
+
+**Example**:
+```bash
+# Edit src/handlers/listMailboxes.ts
+# Save file
+# Console shows: [INFO] Restarting 'local-server.ts'
+# Test: curl http://localhost:3001/mailboxes
+```
+
+### Development with Frontend
+
+Run both frontend and backend simultaneously:
+
+```bash
+# Terminal 1: Backend API
+cd mailbox-api
+npm run dev
+
+# Terminal 2: Frontend
+cd mailbox-fe
+npm start
+
+# Frontend (localhost:3000) → Backend (localhost:3001) → AWS Services
+```
+
+### Authentication in Local Mode
+
+**Dev Mode Bypass**:
+- Frontend shows "Dev Login" button (no Azure Entra)
+- Click to log in as matt@submanagementgroup.com (SYSTEM_ADMIN)
+- Backend accepts `DEV_TOKEN_BYPASS` token when `ENVIRONMENT=local`
+- All features testable without Azure setup
+
+**Production Mode**:
+- Remove `ENVIRONMENT=local` from .env
+- Normal Azure Entra JWT validation
+
+### Database Access
+
+The local server connects to **deployed Aurora** (not local MySQL):
+
+**Why?**
+- Real data for testing
+- No Docker setup needed
+- Actual schema and migrations
+- Test with real SES emails
+
+**Direct Database Access**:
+```bash
+# Get database password
+npm run get-db-password
+
+# Connect via MySQL client
+mysql -h dev-mailbox-api-deployment-d-auroracluster23d869c0-qicpu0y8rf5e.cluster-cby4imkui7pd.ca-central-1.rds.amazonaws.com \
+  -u mailadmin \
+  -p email_platform
+
+# Or use TablePlus, DBeaver, etc.
+```
+
+### Troubleshooting
+
+**"Cannot connect to database"**:
+- Verify you're on VPN or have VPC access
+- Check security group allows your IP
+- Verify DB_PASSWORD is correct
+
+**"Module not found" errors**:
+- Run `npm install` again
+- Clear node_modules: `rm -rf node_modules && npm install`
+
+**Changes not reloading**:
+- Check console for TypeScript errors
+- Restart: Ctrl+C and `npm run dev`
+- Verify `ts-node-dev` is running
+
+---
+
 ## Testing
 
 ```bash
