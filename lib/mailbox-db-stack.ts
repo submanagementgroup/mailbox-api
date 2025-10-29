@@ -5,6 +5,8 @@ import * as rds from 'aws-cdk-lib/aws-rds';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as kms from 'aws-cdk-lib/aws-kms';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 export interface MailboxDbStackProps extends cdk.StackProps {
   targetEnvironment: 'dev' | 'prod';
@@ -89,6 +91,27 @@ export class MailboxDbStack extends cdk.Stack {
     });
 
     // ============================================
+    // KMS KEY FOR DATABASE ENCRYPTION
+    // ============================================
+    const dbKmsKey = new kms.Key(this, 'DatabaseEncryptionKey', {
+      enableKeyRotation: true,
+      description: `KMS key for ${props.targetEnvironment} mail platform database encryption`,
+      alias: `alias/${props.targetEnvironment}-mail-db-key`,
+      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    });
+
+    // ============================================
+    // RDS ENHANCED MONITORING ROLE
+    // ============================================
+    const rdsMonitoringRole = new iam.Role(this, 'RDSMonitoringRole', {
+      assumedBy: new iam.ServicePrincipal('monitoring.rds.amazonaws.com'),
+      description: `Enhanced monitoring role for ${props.targetEnvironment} mail database`,
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonRDSEnhancedMonitoringRole'),
+      ],
+    });
+
+    // ============================================
     // AURORA SERVERLESS V2
     // ============================================
     this.dbCluster = new rds.DatabaseCluster(this, 'AuroraCluster', {
@@ -107,8 +130,10 @@ export class MailboxDbStack extends cdk.Stack {
       writer: rds.ClusterInstance.serverlessV2('Writer', {
         instanceIdentifier: `${props.targetEnvironment}-mail-writer`,
         publiclyAccessible: false,
-        enablePerformanceInsights: !isProd, // Enable in dev for testing
-        performanceInsightRetention: isProd ? undefined : rds.PerformanceInsightRetention.DEFAULT,
+        enablePerformanceInsights: true, // FIXED: Enable in all environments (was backwards)
+        performanceInsightRetention: isProd
+          ? rds.PerformanceInsightRetention.MONTHS_12
+          : rds.PerformanceInsightRetention.DEFAULT,
       }),
       readers: isProd ? [
         rds.ClusterInstance.serverlessV2('Reader', {
@@ -119,6 +144,7 @@ export class MailboxDbStack extends cdk.Stack {
         }),
       ] : [],
       monitoringInterval: cdk.Duration.seconds(60), // Required by NIST CT.RDS.PR.2
+      monitoringRole: rdsMonitoringRole, // Explicit role for enhanced monitoring
       backup: {
         retention: isProd ? cdk.Duration.days(30) : cdk.Duration.days(7),
         preferredWindow: '08:00-09:00', // 3-4 AM Toronto (EST = UTC-5)
@@ -127,6 +153,7 @@ export class MailboxDbStack extends cdk.Stack {
       cloudwatchLogsExports: ['error', 'general', 'slowquery'],
       cloudwatchLogsRetention: logs.RetentionDays.ONE_MONTH,
       storageEncrypted: true, // Required by NIST CT.RDS.PR.16
+      storageEncryptionKey: dbKmsKey, // Customer-managed KMS key with rotation
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
       deletionProtection: isProd,
     });

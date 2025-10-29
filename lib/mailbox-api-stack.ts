@@ -63,6 +63,8 @@ export class MailboxApiStack extends cdk.Stack {
       },
       securityGroups: [props.lambdaSecurityGroup],
       logRetention: logs.RetentionDays.ONE_MONTH,
+      tracing: lambda.Tracing.ACTIVE, // X-Ray distributed tracing
+      architecture: lambda.Architecture.ARM_64, // Cost savings (~20% cheaper)
       // layers: [sharedLayer], // Add when layer is created
     };
 
@@ -121,6 +123,7 @@ exports.handler = async (event) => {
       description: `Email MFA Platform API (${props.targetEnvironment})`,
       deployOptions: {
         stageName: props.targetEnvironment,
+        tracingEnabled: true, // X-Ray distributed tracing for API Gateway
         loggingLevel: apigateway.MethodLoggingLevel.INFO,
         dataTraceEnabled: !isProd,
         metricsEnabled: true,

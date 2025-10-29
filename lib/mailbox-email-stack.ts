@@ -107,6 +107,8 @@ exports.handler = async (event) => {
       },
       securityGroups: [props.lambdaSecurityGroup],
       logRetention: logs.RetentionDays.ONE_MONTH,
+      tracing: lambda.Tracing.ACTIVE, // X-Ray distributed tracing
+      architecture: lambda.Architecture.ARM_64, // Cost savings (~20% cheaper)
     });
 
     // Grant Lambda access to S3 bucket
