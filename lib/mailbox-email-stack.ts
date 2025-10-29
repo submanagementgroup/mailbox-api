@@ -34,13 +34,15 @@ export class MailboxEmailStack extends cdk.Stack {
     // ============================================
     this.emailBucket = new s3.Bucket(this, 'EmailBucket', {
       bucketName: `${props.targetEnvironment}-mailbox-emails-${cdk.Aws.ACCOUNT_ID}`,
+      versioned: true, // Required by NIST
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      versioned: false,
+      enforceSSL: true, // Required by NIST CT.S3.PR.1
       lifecycleRules: [
         {
           // Delete raw emails after 90 days (we have parsed data in Aurora)
           expiration: cdk.Duration.days(90),
+          noncurrentVersionExpiration: cdk.Duration.days(7),
           id: 'DeleteOldEmails',
         },
       ],
