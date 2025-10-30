@@ -196,7 +196,8 @@ exports.handler = async (event) => {
       }),
     });
     grantSecretsAccess(smartLoginFunction);
-    authResource.addResource('login').addMethod(
+    const loginResource = authResource.addResource('login');
+    loginResource.addMethod(
       'POST',
       new apigateway.LambdaIntegration(smartLoginFunction)
     );
@@ -217,7 +218,7 @@ exports.handler = async (event) => {
       }),
     });
     grantSecretsAccess(localLoginFunction);
-    authResource.addResource('login').addResource('local').addMethod(
+    loginResource.addResource('local').addMethod(
       'POST',
       new apigateway.LambdaIntegration(localLoginFunction)
     );
