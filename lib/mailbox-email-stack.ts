@@ -63,7 +63,7 @@ export class MailboxEmailStack extends cdk.Stack {
     // ============================================
     this.emailProcessorFunction = new lambda.Function(this, 'EmailProcessor', {
       functionName: `${props.targetEnvironment}-mailbox-email-processor`,
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'index.handler',
       code: lambda.Code.fromInline(`
 // Placeholder Lambda function for email processing
@@ -185,7 +185,7 @@ exports.handler = async (event) => {
     // Custom Resource Lambda Function
     const customResourceFunction = new lambda.Function(this, 'SESReceiptRuleCustomResource', {
       functionName: `${props.targetEnvironment}-ses-receipt-rule-cr`,
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('lambda/ses-receipt-rule-cr'),
       timeout: cdk.Duration.seconds(60), // Allow time for CloudFormation response

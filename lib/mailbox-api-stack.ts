@@ -47,7 +47,7 @@ export class MailboxApiStack extends cdk.Stack {
     // COMMON LAMBDA CONFIGURATION
     // ============================================
     const commonLambdaProps = {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
       environment: {
@@ -343,7 +343,7 @@ exports.handler = async (event) => {
       handler: 'handlers/createMailbox.handler',
       code: lambda.Code.fromAsset('.', {
         bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
             'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
@@ -379,7 +379,7 @@ exports.handler = async (event) => {
       handler: 'handlers/addWhitelistSender.handler',
       code: lambda.Code.fromAsset('.', {
         bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
             'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
@@ -402,7 +402,7 @@ exports.handler = async (event) => {
       handler: 'handlers/deleteWhitelistSender.handler',
       code: lambda.Code.fromAsset('.', {
         bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
             'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
