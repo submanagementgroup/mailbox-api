@@ -8,6 +8,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 
 export interface MailboxApiStackProps extends cdk.StackProps {
   targetEnvironment: 'dev' | 'prod';
@@ -17,6 +18,7 @@ export interface MailboxApiStackProps extends cdk.StackProps {
   dbSecret: secretsmanager.ISecret;
   redisCluster: elasticache.CfnCacheCluster;
   lambdaSecurityGroup: ec2.ISecurityGroup;
+  emailBucket: s3.IBucket;
 }
 
 export class MailboxApiStack extends cdk.Stack {
@@ -54,8 +56,10 @@ export class MailboxApiStack extends cdk.Stack {
         DB_SECRET_ARN: props.dbSecret.secretArn,
         REDIS_HOST: props.redisCluster.attrRedisEndpointAddress,
         REDIS_PORT: props.redisCluster.attrRedisEndpointPort,
+        EMAIL_BUCKET: props.emailBucket.bucketName,
         ENVIRONMENT: props.targetEnvironment,
         NODE_ENV: isProd ? 'production' : 'development',
+        MAILBOX_DOMAIN: isProd ? 'funding.submanagementgroup.com' : 'funding.dev.submanagementgroup.com',
       },
       vpc: props.vpc,
       vpcSubnets: {
@@ -330,6 +334,30 @@ exports.handler = async (event) => {
       { authorizer }
     );
 
+    // Mailbox management (admin)
+    const adminMailboxesResource = adminResource.addResource('mailboxes');
+
+    const createMailboxFunction = new lambda.Function(this, 'CreateMailbox', {
+      ...commonLambdaProps,
+      functionName: `${props.targetEnvironment}-mailbox-createmailbox`,
+      handler: 'handlers/createMailbox.handler',
+      code: lambda.Code.fromAsset('src', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          command: [
+            'bash', '-c',
+            'npm install && cp -r . /asset-output/',
+          ],
+        },
+      }),
+    });
+    grantSecretsAccess(createMailboxFunction);
+    adminMailboxesResource.addMethod(
+      'POST',
+      new apigateway.LambdaIntegration(createMailboxFunction),
+      { authorizer }
+    );
+
     // Whitelist management
     const whitelistResource = adminResource.addResource('whitelist');
 
@@ -352,21 +380,26 @@ exports.handler = async (event) => {
     );
 
     // ============================================
-    // OUTPUTS
+    // OUTPUTS (DEPRECATED - will be removed after deployment)
     // ============================================
+    // These outputs are deprecated in favor of direct object passing.
+    // The api and authorizerFunction are now public readonly properties.
+    // Use apiStack.api and apiStack.authorizerFunction for cross-stack references.
+    // Keeping temporarily for deployment safety, will remove after verification.
+
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: this.api.url,
-      description: 'API Gateway URL',
+      description: '[DEPRECATED] API Gateway URL - use apiStack.api.url instead',
     });
 
     new cdk.CfnOutput(this, 'ApiId', {
       value: this.api.restApiId,
-      description: 'API Gateway ID',
+      description: '[DEPRECATED] API Gateway ID - use apiStack.api.restApiId instead',
     });
 
     new cdk.CfnOutput(this, 'AuthorizerFunctionArn', {
       value: this.authorizerFunction.functionArn,
-      description: 'JWT Authorizer Lambda ARN',
+      description: '[DEPRECATED] JWT Authorizer Lambda ARN - use apiStack.authorizerFunction.functionArn instead',
     });
   }
 }

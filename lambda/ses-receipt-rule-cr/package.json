@@ -1,0 +1,17 @@
+{
+  "name": "ses-receipt-rule-custom-resource",
+  "version": "1.0.0",
+  "description": "CloudFormation custom resource for managing SES receipt rules",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist *.js *.d.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.525.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}

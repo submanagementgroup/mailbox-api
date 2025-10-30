@@ -142,14 +142,8 @@ exports.handler = async (event) => {
     );
 
     // ============================================
-    // SES RECEIPT RULE SET
+    // SES RECEIPT RULE SET (Custom Resource)
     // ============================================
-    // Note: SES receipt rules must be configured manually or via AWS CLI
-    // because CDK doesn't support active receipt rule sets fully
-    // The rule should:
-    // 1. Store email to S3: s3://${emailBucket}/incoming/${timestamp}.eml
-    // 2. Lambda is triggered by S3 event (configured above)
-
     // Grant SES permission to write to S3 bucket
     this.emailBucket.addToResourcePolicy(
       new iam.PolicyStatement({
@@ -165,32 +159,86 @@ exports.handler = async (event) => {
       })
     );
 
+    // IAM Role for Custom Resource Lambda
+    const customResourceRole = new iam.Role(this, 'SESReceiptRuleCustomResourceRole', {
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+      ],
+    });
+
+    // Grant SES permissions to the custom resource
+    customResourceRole.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'ses:CreateReceiptRule',
+          'ses:UpdateReceiptRule',
+          'ses:DeleteReceiptRule',
+          'ses:DescribeReceiptRule',
+          'ses:DescribeReceiptRuleSet',
+        ],
+        resources: ['*'], // SES doesn't support resource-level permissions for receipt rules
+      })
+    );
+
+    // Custom Resource Lambda Function
+    const customResourceFunction = new lambda.Function(this, 'SESReceiptRuleCustomResource', {
+      functionName: `${props.targetEnvironment}-ses-receipt-rule-cr`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('lambda/ses-receipt-rule-cr'),
+      timeout: cdk.Duration.seconds(60), // Allow time for CloudFormation response
+      memorySize: 256,
+      role: customResourceRole,
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      architecture: lambda.Architecture.ARM_64,
+    });
+
+    // Create Custom Resource to manage SES receipt rule
+    const sesReceiptRule = new cdk.CustomResource(this, 'SESReceiptRule', {
+      serviceToken: customResourceFunction.functionArn,
+      properties: {
+        RuleSetName: 'default-rule-set',
+        RuleName: `${props.targetEnvironment}-mailbox-rule`,
+        Recipients: [props.mailDomain],
+        S3BucketName: this.emailBucket.bucketName,
+        S3ObjectKeyPrefix: 'incoming/',
+        TlsPolicy: 'Require',
+        Enabled: true,
+      },
+    });
+
     // ============================================
-    // OUTPUTS
+    // OUTPUTS (DEPRECATED - will be removed after deployment)
     // ============================================
+    // These outputs are deprecated in favor of direct object passing.
+    // The emailBucket is now passed directly to apiStack via props.
+    // Keeping temporarily for deployment safety, will remove after verification.
+
     new cdk.CfnOutput(this, 'EmailBucketName', {
       value: this.emailBucket.bucketName,
-      description: 'S3 bucket for received emails',
+      description: '[DEPRECATED] S3 bucket for received emails - use emailStack.emailBucket instead',
     });
 
     new cdk.CfnOutput(this, 'EmailProcessorArn', {
       value: this.emailProcessorFunction.functionArn,
-      description: 'Email processor Lambda function ARN',
+      description: '[DEPRECATED] Email processor Lambda function ARN - informational only',
     });
 
     new cdk.CfnOutput(this, 'SESIdentityName', {
       value: props.mailDomain,
-      description: 'SES email identity (domain)',
+      description: '[DEPRECATED] SES email identity (domain) - informational only',
     });
 
     new cdk.CfnOutput(this, 'DKIMRecords', {
       value: 'Check AWS Console for DKIM records to add to DNS',
-      description: 'DKIM DNS records (see SES Console)',
+      description: '[DEPRECATED] DKIM DNS records - see SES Console',
     });
 
-    new cdk.CfnOutput(this, 'SESReceiptRuleCommand', {
-      value: `aws ses create-receipt-rule --rule-set-name default-rule-set --rule '{"Name":"${props.targetEnvironment}-mailbox-rule","Enabled":true,"TlsPolicy":"Require","Recipients":["${props.mailDomain}"],"Actions":[{"S3Action":{"BucketName":"${this.emailBucket.bucketName}","ObjectKeyPrefix":"incoming/"}}]}'`,
-      description: 'AWS CLI command to create SES receipt rule',
+    new cdk.CfnOutput(this, 'SESReceiptRuleStatus', {
+      value: 'SES receipt rule automatically managed by Custom Resource',
+      description: '[DEPRECATED] Receipt rule status - managed by Custom Resource',
     });
   }
 }

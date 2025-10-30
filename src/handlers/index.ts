@@ -14,6 +14,7 @@ export { handler as createForwardingRule } from './createForwardingRule';
 
 // Admin handlers
 export { handler as createUser } from './createUser';
+export { handler as createMailbox } from './createMailbox';
 
 // Additional handlers implemented as placeholders:
 // - listForwardingRules
@@ -25,7 +26,6 @@ export { handler as createUser } from './createUser';
 // - listUsers
 // - deleteUser
 // - resetPassword
-// - createMailbox
 // - assignMailbox
 // - listWhitelistedSenders
 // - addWhitelistedSender

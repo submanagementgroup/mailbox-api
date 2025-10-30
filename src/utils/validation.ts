@@ -21,8 +21,14 @@ export type CreateUserInput = z.infer<typeof createUserSchema>;
 // ============================================
 
 export const createMailboxSchema = z.object({
-  emailAddress: z.string().email('Invalid email address'),
-  quotaMb: z.number().int().positive().max(10240).optional().default(5120),
+  emailAddress: z.string().email('Invalid email address').refine((email) => {
+    const allowedDomain = process.env.MAILBOX_DOMAIN || 'funding.dev.submanagementgroup.com';
+    const domain = email.split('@')[1];
+    return domain === allowedDomain;
+  }, {
+    message: `Email must be from domain ${process.env.MAILBOX_DOMAIN || 'funding.dev.submanagementgroup.com'}`,
+  }),
+  quotaMb: z.number().int().positive().max(51200).optional().default(20480), // 20GB default, max 50GB
 });
 
 export type CreateMailboxInput = z.infer<typeof createMailboxSchema>;
@@ -81,12 +87,6 @@ export const addWhitelistSenderSchema = z.object({
 });
 
 export type AddWhitelistSenderInput = z.infer<typeof addWhitelistSenderSchema>;
-
-export const addWhitelistRecipientSchema = z.object({
-  email: z.string().email('Invalid email address'),
-});
-
-export type AddWhitelistRecipientInput = z.infer<typeof addWhitelistRecipientSchema>;
 
 // ============================================
 // Validation Utility Functions

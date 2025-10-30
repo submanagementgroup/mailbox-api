@@ -6,9 +6,14 @@
  * Add security headers to response
  */
 export function addSecurityHeaders(response: any): any {
+  // Determine allowed origin based on environment
+  const allowedOrigin = process.env.ENVIRONMENT === 'local'
+    ? 'http://localhost:3000'
+    : process.env.FRONTEND_URL || 'https://mail.dev.submanagementgroup.com';
+
   const headers = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*', // Will be restricted in production
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Credentials': 'true',

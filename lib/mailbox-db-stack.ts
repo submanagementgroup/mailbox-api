@@ -187,36 +187,41 @@ export class MailboxDbStack extends cdk.Stack {
     this.redisCluster.addDependency(redisSubnetGroup);
 
     // ============================================
-    // OUTPUTS (No exports - stacks pass direct references)
+    // OUTPUTS (DEPRECATED - will be removed after deployment)
     // ============================================
+    // These outputs are deprecated in favor of direct object passing.
+    // All resources are now passed directly via props (vpc, dbCluster, dbSecret, redisCluster, lambdaSecurityGroup).
+    // Use dbStack.vpc, dbStack.dbCluster, etc. for cross-stack references.
+    // Keeping temporarily for deployment safety, will remove after verification.
+
     new cdk.CfnOutput(this, 'DatabaseEndpoint', {
       value: this.dbCluster.clusterEndpoint.hostname,
-      description: 'Aurora database cluster endpoint',
+      description: '[DEPRECATED] Aurora database cluster endpoint - use dbStack.dbCluster.clusterEndpoint.hostname instead',
     });
 
     new cdk.CfnOutput(this, 'DatabaseName', {
       value: 'email_platform',
-      description: 'Database name',
+      description: '[DEPRECATED] Database name - hardcoded value, informational only',
     });
 
     new cdk.CfnOutput(this, 'DatabaseSecretArn', {
       value: this.dbSecret.secretArn,
-      description: 'ARN of database credentials secret',
+      description: '[DEPRECATED] ARN of database credentials secret - use dbStack.dbSecret.secretArn instead',
     });
 
     new cdk.CfnOutput(this, 'RedisEndpoint', {
       value: this.redisCluster.attrRedisEndpointAddress,
-      description: 'Redis endpoint address',
+      description: '[DEPRECATED] Redis endpoint address - use dbStack.redisCluster.attrRedisEndpointAddress instead',
     });
 
     new cdk.CfnOutput(this, 'RedisPort', {
       value: this.redisCluster.attrRedisEndpointPort,
-      description: 'Redis endpoint port',
+      description: '[DEPRECATED] Redis endpoint port - use dbStack.redisCluster.attrRedisEndpointPort instead',
     });
 
     new cdk.CfnOutput(this, 'LambdaSecurityGroupId', {
       value: this.lambdaSecurityGroup.securityGroupId,
-      description: 'Security group ID for Lambda functions',
+      description: '[DEPRECATED] Security group ID for Lambda functions - use dbStack.lambdaSecurityGroup.securityGroupId instead',
     });
   }
 }

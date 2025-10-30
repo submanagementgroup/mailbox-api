@@ -70,8 +70,10 @@ if (targetEnv === 'dev' || targetEnv === 'development') {
       dbSecret: dbStack.dbSecret,
       redisCluster: dbStack.redisCluster,
       lambdaSecurityGroup: dbStack.lambdaSecurityGroup,
+      emailBucket: emailStack.emailBucket,
     });
     apiStack.addDependency(dbStack);
+    apiStack.addDependency(emailStack);
     cdk.Tags.of(apiStack).add('Component', 'mailbox-api');
     cdk.Tags.of(apiStack).add('Environment', 'Development');
   },
@@ -129,8 +131,10 @@ if (targetEnv === 'dev' || targetEnv === 'development') {
       dbSecret: dbStack.dbSecret,
       redisCluster: dbStack.redisCluster,
       lambdaSecurityGroup: dbStack.lambdaSecurityGroup,
+      emailBucket: emailStack.emailBucket,
     });
     apiStack.addDependency(dbStack);
+    apiStack.addDependency(emailStack);
     cdk.Tags.of(apiStack).add('Component', 'mailbox-api');
     cdk.Tags.of(apiStack).add('Environment', 'Production');
   },

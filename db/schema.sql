@@ -9,7 +9,8 @@
 CREATE TABLE IF NOT EXISTS mailboxes (
   id INT PRIMARY KEY AUTO_INCREMENT,
   email_address VARCHAR(255) UNIQUE NOT NULL,
-  quota_mb INT DEFAULT 5120,
+  quota_mb INT DEFAULT 20480,
+  used_mb INT DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_by VARCHAR(255) COMMENT 'Entra user ID',
@@ -79,17 +80,6 @@ CREATE TABLE IF NOT EXISTS whitelisted_senders (
   added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_domain (domain)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Allowed sender domains for receiving email';
-
--- ============================================
--- Whitelisted Forwarding Recipients
--- ============================================
-CREATE TABLE IF NOT EXISTS whitelisted_recipients (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  added_by VARCHAR(255) COMMENT 'Entra user ID',
-  added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_email (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Allowed forwarding recipient emails';
 
 -- ============================================
 -- Email Messages (Parsed from SES)

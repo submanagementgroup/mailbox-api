@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authenticate } from '../middleware/auth';
 import { requireMailboxAccess } from '../middleware/mailboxAccess';
 import { successResponse, handleError } from '../middleware/security';
-import { queryOne, insert } from '../config/database';
+import { insert } from '../config/database';
 import { logAudit, AuditAction } from '../services/auditLogger';
 import { validateInput, createForwardingRuleSchema } from '../utils/validation';
 
@@ -25,18 +25,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const body = event.body ? JSON.parse(event.body) : {};
     const input = validateInput(createForwardingRuleSchema, body);
 
-    // Check if recipient is whitelisted
-    const isWhitelisted = await queryOne<{ id: number }>(
-      'SELECT id FROM whitelisted_recipients WHERE email = ?',
-      [input.recipientEmail]
-    );
-
-    if (!isWhitelisted) {
-      return handleError({
-        statusCode: 403,
-        message: 'Recipient email is not whitelisted. Contact admin to add.',
-      });
-    }
+    // TODO: Implement recipient validation/whitelist logic
 
     // Create forwarding rule
     const ruleId = await insert(

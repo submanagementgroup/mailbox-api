@@ -1,4 +1,4 @@
-import mysql from 'mysql2/promise';
+import mysql = require('mysql2/promise');
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { DatabaseConfig } from '../utils/types';
 
@@ -10,13 +10,33 @@ let pool: mysql.Pool | null = null;
 let dbConfig: DatabaseConfig | null = null;
 
 /**
- * Fetch database credentials from AWS Secrets Manager
+ * Fetch database credentials from AWS Secrets Manager or local env
  */
 async function getDatabaseCredentials(): Promise<DatabaseConfig> {
   if (dbConfig) {
     return dbConfig;
   }
 
+  // Local development mode: use credentials from .env.local
+  if (process.env.ENVIRONMENT === 'local') {
+    console.log('Using local database credentials from environment variables');
+
+    dbConfig = {
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '3306'),
+      database: process.env.DB_NAME || 'email_platform',
+      user: process.env.DB_USERNAME || 'mailadmin',
+      password: process.env.DB_PASSWORD || '',
+    };
+
+    if (!dbConfig.password) {
+      throw new Error('DB_PASSWORD not set in .env.local');
+    }
+
+    return dbConfig;
+  }
+
+  // Production mode: fetch from Secrets Manager
   const secretArn = process.env.DB_SECRET_ARN;
   if (!secretArn) {
     throw new Error('DB_SECRET_ARN environment variable not set');
