@@ -40,8 +40,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
         emailAddress: input.emailAddress,
         quotaMb: QUOTA_MB,
       },
-      ipAddress: event.requestContext.identity.sourceIp,
-      userAgent: event.requestContext.identity.userAgent,
+      ipAddress: event.requestContext.identity.sourceIp || undefined,
+      userAgent: event.requestContext.identity.userAgent || undefined,
     });
 
     // Return success response

@@ -41,8 +41,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       resourceType: 'forwarding_rule',
       resourceId: ruleId,
       details: { recipientEmail: input.recipientEmail },
-      ipAddress: event.requestContext.identity.sourceIp,
-      userAgent: event.requestContext.identity.userAgent,
+      ipAddress: event.requestContext.identity.sourceIp || undefined,
+      userAgent: event.requestContext.identity.userAgent || undefined,
     });
 
     return successResponse({ id: ruleId, message: 'Forwarding rule created' }, 201);

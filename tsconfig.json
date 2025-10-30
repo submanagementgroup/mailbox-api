@@ -25,6 +25,8 @@
   "exclude": [
     "node_modules",
     "cdk.out",
-    "src/**/*"
+    "src/**/*",
+    "local-server.ts",
+    "db/**/*"
   ]
 }

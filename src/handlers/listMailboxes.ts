@@ -37,8 +37,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       entraUserId: user.entraId,
       userEmail: user.email,
       action: AuditAction.VIEW_MAILBOX,
-      ipAddress: event.requestContext.identity.sourceIp,
-      userAgent: event.requestContext.identity.userAgent,
+      ipAddress: event.requestContext.identity.sourceIp || undefined,
+      userAgent: event.requestContext.identity.userAgent || undefined,
     });
 
     return successResponse(mailboxes);

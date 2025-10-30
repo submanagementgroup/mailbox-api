@@ -168,7 +168,7 @@ exports.handler = async (event) => {
     });
 
     // Grant SES permissions to the custom resource
-    customResourceRole.addToRolePolicy(
+    customResourceRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: [

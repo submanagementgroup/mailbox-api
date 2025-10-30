@@ -40,8 +40,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       action: AuditAction.VIEW_MESSAGE,
       resourceType: 'message',
       resourceId: messageId,
-      ipAddress: event.requestContext.identity.sourceIp,
-      userAgent: event.requestContext.identity.userAgent,
+      ipAddress: event.requestContext.identity.sourceIp || undefined,
+      userAgent: event.requestContext.identity.userAgent || undefined,
     });
 
     return successResponse(message);

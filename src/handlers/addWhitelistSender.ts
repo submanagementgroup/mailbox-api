@@ -42,8 +42,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       details: {
         domain: input.domain,
       },
-      ipAddress: event.requestContext.identity.sourceIp,
-      userAgent: event.requestContext.identity.userAgent,
+      ipAddress: event.requestContext.identity.sourceIp || undefined,
+      userAgent: event.requestContext.identity.userAgent || undefined,
     });
 
     return successResponse(

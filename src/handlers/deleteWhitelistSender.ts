@@ -26,12 +26,12 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     // Delete whitelisted sender
-    const result = await query(
+    const [result] = await query(
       `DELETE FROM whitelisted_senders WHERE id = ?`,
       [senderId]
     );
 
-    if (result.affectedRows === 0) {
+    if ((result as any).affectedRows === 0) {
       return {
         statusCode: 404,
         headers: { 'Content-Type': 'application/json' },
@@ -49,8 +49,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       details: {
         senderId,
       },
-      ipAddress: event.requestContext.identity.sourceIp,
-      userAgent: event.requestContext.identity.userAgent,
+      ipAddress: event.requestContext.identity.sourceIp || undefined,
+      userAgent: event.requestContext.identity.userAgent || undefined,
     });
 
     return successResponse(

@@ -64,8 +64,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       action: AuditAction.VIEW_MESSAGES,
       resourceType: 'mailbox',
       resourceId: mailboxId,
-      ipAddress: event.requestContext.identity.sourceIp,
-      userAgent: event.requestContext.identity.userAgent,
+      ipAddress: event.requestContext.identity.sourceIp || undefined,
+      userAgent: event.requestContext.identity.userAgent || undefined,
     });
 
     return successResponse(response);
