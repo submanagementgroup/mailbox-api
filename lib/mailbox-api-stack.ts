@@ -84,7 +84,13 @@ export class MailboxApiStack extends cdk.Stack {
           image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
-            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+            [
+              'cp -r /asset-input/src /asset-output/',
+              'cp /asset-input/package*.json /asset-output/',
+              'cd /asset-output',
+              'npm ci --omit=dev --ignore-scripts',
+              'rm -f package*.json',
+            ].join(' && '),
           ],
         },
       }),
@@ -190,7 +196,13 @@ exports.handler = async (event) => {
           image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
-            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+            [
+              'cp -r /asset-input/src /asset-output/',
+              'cp /asset-input/package*.json /asset-output/',
+              'cd /asset-output',
+              'npm ci --omit=dev --ignore-scripts',
+              'rm -f package*.json',
+            ].join(' && '),
           ],
         },
       }),
@@ -212,7 +224,13 @@ exports.handler = async (event) => {
           image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
-            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+            [
+              'cp -r /asset-input/src /asset-output/',
+              'cp /asset-input/package*.json /asset-output/',
+              'cd /asset-output',
+              'npm ci --omit=dev --ignore-scripts',
+              'rm -f package*.json',
+            ].join(' && '),
           ],
         },
       }),
@@ -233,7 +251,13 @@ exports.handler = async (event) => {
           image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
-            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+            [
+              'cp -r /asset-input/src /asset-output/',
+              'cp /asset-input/package*.json /asset-output/',
+              'cd /asset-output',
+              'npm ci --omit=dev --ignore-scripts',
+              'rm -f package*.json',
+            ].join(' && '),
           ],
         },
       }),
@@ -254,7 +278,13 @@ exports.handler = async (event) => {
           image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
-            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+            [
+              'cp -r /asset-input/src /asset-output/',
+              'cp /asset-input/package*.json /asset-output/',
+              'cd /asset-output',
+              'npm ci --omit=dev --ignore-scripts',
+              'rm -f package*.json',
+            ].join(' && '),
           ],
         },
       }),
@@ -399,7 +429,13 @@ exports.handler = async (event) => {
           image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
-            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+            [
+              'cp -r /asset-input/src /asset-output/',
+              'cp /asset-input/package*.json /asset-output/',
+              'cd /asset-output',
+              'npm ci --omit=dev --ignore-scripts',
+              'rm -f package*.json',
+            ].join(' && '),
           ],
         },
       }),
@@ -435,7 +471,13 @@ exports.handler = async (event) => {
           image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
-            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+            [
+              'cp -r /asset-input/src /asset-output/',
+              'cp /asset-input/package*.json /asset-output/',
+              'cd /asset-output',
+              'npm ci --omit=dev --ignore-scripts',
+              'rm -f package*.json',
+            ].join(' && '),
           ],
         },
       }),
@@ -458,7 +500,13 @@ exports.handler = async (event) => {
           image: lambda.Runtime.NODEJS_22_X.bundlingImage,
           command: [
             'bash', '-c',
-            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+            [
+              'cp -r /asset-input/src /asset-output/',
+              'cp /asset-input/package*.json /asset-output/',
+              'cd /asset-output',
+              'npm ci --omit=dev --ignore-scripts',
+              'rm -f package*.json',
+            ].join(' && '),
           ],
         },
       }),
