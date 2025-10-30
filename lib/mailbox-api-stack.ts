@@ -222,11 +222,25 @@ exports.handler = async (event) => {
       new apigateway.LambdaIntegration(localLoginFunction)
     );
 
-    const loginCallbackFunction = createPlaceholderFunction('LoginCallback', 'POST /auth/callback');
-    grantSecretsAccess(loginCallbackFunction);
+    // Auth callback - Enterprise App SSO flow
+    const authCallbackFunction = new lambda.Function(this, 'AuthCallback', {
+      ...commonLambdaProps,
+      functionName: `${props.targetEnvironment}-mailbox-authcallback`,
+      handler: 'handlers/authCallback.handler',
+      code: lambda.Code.fromAsset('.', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
+          command: [
+            'bash', '-c',
+            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+          ],
+        },
+      }),
+    });
+    grantSecretsAccess(authCallbackFunction);
     authResource.addResource('callback').addMethod(
       'POST',
-      new apigateway.LambdaIntegration(loginCallbackFunction)
+      new apigateway.LambdaIntegration(authCallbackFunction)
     );
 
     // Password change - for local auth users
