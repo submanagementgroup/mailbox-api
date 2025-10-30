@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import mysql from 'mysql2/promise';
 import fs from 'fs';
+import path from 'path';
 import dotenv from 'dotenv';
 
 // Load .env.local
@@ -16,35 +17,57 @@ const config = {
 
 console.log(`Connecting to database: ${config.host}:${config.port}/${config.database}`);
 
-async function applyMigration() {
+async function applyMigrations() {
   let connection;
   try {
     connection = await mysql.createConnection(config);
-    console.log('✓ Connected to database');
+    console.log('✓ Connected to database\n');
 
-    // Read migration SQL
-    const migrationSQL = fs.readFileSync('db/migrations/add_used_mb_column.sql', 'utf8');
+    // Get all migration files
+    const migrationsDir = 'db/migrations';
+    const files = fs.readdirSync(migrationsDir)
+      .filter(f => f.endsWith('.sql'))
+      .sort(); // Apply in order
 
-    // Execute migration
-    console.log('Applying migration...');
-    await connection.query(migrationSQL);
+    console.log(`Found ${files.length} migration file(s):\n`);
 
-    console.log('✓ Migration applied successfully!');
-    console.log('  Added used_mb column to mailboxes table');
+    for (const file of files) {
+      const migrationPath = path.join(migrationsDir, file);
+      console.log(`Applying: ${file}...`);
 
-    // Verify column was added
-    const [columns] = await connection.query('SHOW COLUMNS FROM mailboxes LIKE "used_mb"');
-    if (columns.length > 0) {
-      console.log('✓ Verified: used_mb column exists');
+      try {
+        // Read and execute migration
+        const sql = fs.readFileSync(migrationPath, 'utf8');
+
+        // Split by semicolon and execute each statement
+        const statements = sql
+          .split(';')
+          .map(s => s.trim())
+          .filter(s => s.length > 0 && !s.startsWith('--'));
+
+        for (const statement of statements) {
+          await connection.query(statement);
+        }
+
+        console.log(`  ✓ ${file} completed\n`);
+      } catch (error) {
+        // Handle duplicate/already exists errors gracefully
+        if (error.code === 'ER_TABLE_EXISTS_ERROR' ||
+            error.code === 'ER_DUP_FIELDNAME' ||
+            error.code === 'ER_DUP_KEYNAME') {
+          console.log(`  ⚠ ${file} already applied (skipped)\n`);
+        } else {
+          console.error(`  ✗ ${file} failed:`, error.message);
+          throw error;
+        }
+      }
     }
+
+    console.log('\n✓ All migrations completed successfully!');
 
   } catch (error) {
-    if (error.code === 'ER_DUP_FIELDNAME') {
-      console.log('✓ Column already exists - no migration needed');
-    } else {
-      console.error('✗ Migration failed:', error.message);
-      process.exit(1);
-    }
+    console.error('\n✗ Migration failed:', error.message);
+    process.exit(1);
   } finally {
     if (connection) {
       await connection.end();
@@ -52,4 +75,4 @@ async function applyMigration() {
   }
 }
 
-applyMigration();
+applyMigrations();

@@ -6,22 +6,51 @@
 // User and Authentication Types
 // ============================================
 
-export interface UserContext {
-  entraId: string;
-  email: string;
-  name?: string;
-  roles: string[];
-}
-
 export enum UserRole {
   SYSTEM_ADMIN = 'SYSTEM_ADMIN',
   TEAM_MEMBER = 'TEAM_MEMBER',
   CLIENT_USER = 'CLIENT_USER',
 }
 
-export interface TokenPayload {
-  sub: string; // Entra user ID
+export type AuthProvider = 'local' | 'entra';
+
+/**
+ * User context for authenticated requests
+ * Supports hybrid authentication (local + Entra)
+ */
+export interface UserContext {
+  userId: number; // Database user ID
   email: string;
+  name?: string;
+  role: UserRole; // Single role per user
+  authProvider: AuthProvider;
+  entraOid?: string; // Azure Entra Object ID (only for SSO users)
+
+  // Legacy fields - will be removed after migration
+  entraId?: string; // Deprecated: Use entraOid instead
+}
+
+/**
+ * Token payload for JWT authentication (local auth)
+ */
+export interface LocalTokenPayload {
+  userId: number;
+  email: string;
+  role: UserRole;
+  authProvider: 'local';
+  iat?: number;
+  exp?: number;
+  iss?: string;
+}
+
+/**
+ * Token payload for Azure Entra ID (SSO auth)
+ */
+export interface EntraTokenPayload {
+  sub: string; // Entra user ID
+  oid: string; // Object ID
+  email: string;
+  preferred_username?: string;
   name?: string;
   roles?: string[];
   iat: number;
@@ -29,6 +58,9 @@ export interface TokenPayload {
   iss: string;
   aud: string;
 }
+
+// Legacy type - deprecated
+export interface TokenPayload extends LocalTokenPayload {}
 
 // ============================================
 // Database Models
@@ -187,10 +219,20 @@ export interface AddWhitelistRequest {
 // Lambda Event Types
 // ============================================
 
+/**
+ * Context returned by JWT authorizer
+ * Populated from validated token (local or Entra)
+ */
 export interface AuthorizerContext {
-  entraId: string;
+  userId: string; // String in authorizer context (converted from number)
   email: string;
-  roles: string;
+  role: string; // String in authorizer context (UserRole enum value)
+  authProvider: string; // 'local' or 'entra'
+  entraOid?: string; // Optional Entra Object ID
+
+  // Legacy fields - deprecated
+  entraId?: string; // Deprecated: Use entraOid instead
+  roles?: string; // Deprecated: Use role instead
 }
 
 export interface LambdaContext {

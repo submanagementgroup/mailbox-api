@@ -1,8 +1,7 @@
-import { UserContext } from '../utils/types';
-import { validateToken, extractUserContext } from '../services/tokenService';
+import { UserContext, UserRole, AuthProvider } from '../utils/types';
 
 /**
- * Authentication middleware
+ * Authentication middleware for hybrid auth (local + Entra)
  */
 
 export interface AuthenticatedRequest {
@@ -11,45 +10,91 @@ export interface AuthenticatedRequest {
 }
 
 /**
- * Extract and validate token from Lambda event
+ * Extract and validate user context from Lambda event
+ * Works with both local JWT tokens and Azure Entra tokens
  */
 export async function authenticate(event: any): Promise<UserContext> {
-  // Try to get user context from authorizer first (API Gateway already validated)
+  // Get user context from authorizer (API Gateway already validated token)
   if (event.requestContext?.authorizer) {
     const auth = event.requestContext.authorizer;
-    return {
-      entraId: auth.entraId || auth.principalId,
-      email: auth.email,
-      name: auth.name,
-      roles: auth.roles ? JSON.parse(auth.roles) : [],
-    };
+
+    // New hybrid auth format
+    if (auth.userId && auth.role && auth.authProvider) {
+      return {
+        userId: parseInt(auth.userId, 10),
+        email: auth.email,
+        name: auth.name,
+        role: auth.role as UserRole,
+        authProvider: auth.authProvider as AuthProvider,
+        entraOid: auth.entraOid,
+        // Legacy field for backward compatibility
+        entraId: auth.entraOid || auth.entraId,
+      };
+    }
+
+    // Legacy format (for backward compatibility during migration)
+    if (auth.entraId || auth.principalId) {
+      console.warn('Using legacy authorizer context format - update to hybrid auth');
+      return {
+        userId: parseInt(auth.userId || '0', 10), // Default to 0 if missing
+        email: auth.email,
+        name: auth.name,
+        role: UserRole.SYSTEM_ADMIN, // Default role for legacy
+        authProvider: 'entra',
+        entraId: auth.entraId || auth.principalId,
+        entraOid: auth.entraId || auth.principalId,
+      };
+    }
   }
 
-  // Fallback: Extract token from Authorization header
-  const authHeader = event.headers?.Authorization || event.headers?.authorization;
-  if (!authHeader) {
-    throw new Error('No authorization header');
+  // Dev mode bypass for local testing
+  if (process.env.ENVIRONMENT === 'local') {
+    const authHeader = event.headers?.Authorization || event.headers?.authorization;
+    if (authHeader?.includes('DEV_TOKEN_BYPASS')) {
+      console.log('🔓 Dev mode: Bypassing authentication');
+      return {
+        userId: 1,
+        email: 'matt@submanagementgroup.com',
+        name: 'Matt Chadburn (Dev Mode)',
+        role: UserRole.SYSTEM_ADMIN,
+        authProvider: 'local',
+      };
+    }
   }
 
-  const token = authHeader.replace('Bearer ', '');
-  if (!token) {
-    throw new Error('Invalid authorization header format');
-  }
+  throw new Error('Unauthorized');
+}
 
-  // Dev mode bypass: Check for DEV_TOKEN_BYPASS
-  if (token === 'DEV_TOKEN_BYPASS' && process.env.ENVIRONMENT === 'local') {
-    console.log('🔓 Dev mode: Bypassing Azure Entra validation');
-    return {
-      entraId: 'dev-user-id',
-      email: 'matt@submanagementgroup.com',
-      name: 'Matt Chadburn (Dev Mode)',
-      roles: ['SYSTEM_ADMIN'], // Full access for testing
-    };
-  }
+/**
+ * Check if user has admin role (SYSTEM_ADMIN or TEAM_MEMBER)
+ */
+export function isAdmin(user: UserContext): boolean {
+  return user.role === UserRole.SYSTEM_ADMIN || user.role === UserRole.TEAM_MEMBER;
+}
 
-  // Production: Validate token with Azure Entra
-  const payload = await validateToken(token);
-  return extractUserContext(payload);
+/**
+ * Check if user has system admin role
+ */
+export function isSystemAdmin(user: UserContext): boolean {
+  return user.role === UserRole.SYSTEM_ADMIN;
+}
+
+/**
+ * Require admin role or throw error
+ */
+export function requireAdmin(user: UserContext): void {
+  if (!isAdmin(user)) {
+    throw new Error('Admin access required');
+  }
+}
+
+/**
+ * Require system admin role or throw error
+ */
+export function requireSystemAdmin(user: UserContext): void {
+  if (!isSystemAdmin(user)) {
+    throw new Error('System admin access required');
+  }
 }
 
 /**

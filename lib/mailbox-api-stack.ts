@@ -78,42 +78,16 @@ export class MailboxApiStack extends cdk.Stack {
     this.authorizerFunction = new lambda.Function(this, 'Authorizer', {
       ...commonLambdaProps,
       functionName: `${props.targetEnvironment}-mailbox-authorizer`,
-      handler: 'index.handler',
-      code: lambda.Code.fromInline(`
-// Placeholder JWT authorizer
-// Will be replaced with actual Azure Entra ID JWT validation
-exports.handler = async (event) => {
-  console.log('Authorizer event:', JSON.stringify(event, null, 2));
-
-  const token = event.authorizationToken?.replace('Bearer ', '');
-
-  // TODO: Implement actual JWT validation:
-  // 1. Extract JWT from Authorization header
-  // 2. Fetch JWKS from Azure Entra External ID
-  // 3. Verify JWT signature
-  // 4. Validate issuer, audience, expiration
-  // 5. Extract user claims (sub, email, roles)
-  // 6. Return IAM policy allowing/denying access
-
-  // Placeholder: Allow all requests in development
-  return {
-    principalId: 'dev-user',
-    policyDocument: {
-      Version: '2012-10-17',
-      Statement: [{
-        Action: 'execute-api:Invoke',
-        Effect: 'Allow',
-        Resource: event.methodArn.split('/').slice(0, 2).join('/') + '/*'
-      }]
-    },
-    context: {
-      entraId: 'placeholder-user-id',
-      email: 'dev@example.com',
-      roles: JSON.stringify(['SYSTEM_ADMIN'])
-    }
-  };
-};
-      `),
+      handler: 'handlers/authorizer.handler',
+      code: lambda.Code.fromAsset('.', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
+          command: [
+            'bash', '-c',
+            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+          ],
+        },
+      }),
     });
 
     // Grant authorizer access to secrets (for JWT validation keys)
@@ -206,11 +180,75 @@ exports.handler = async (event) => {
     // ============================================
     const authResource = this.api.root.addResource('auth');
 
+    // Smart login - auto-detects auth method (SSO vs local)
+    const smartLoginFunction = new lambda.Function(this, 'SmartLogin', {
+      ...commonLambdaProps,
+      functionName: `${props.targetEnvironment}-mailbox-smartlogin`,
+      handler: 'handlers/login.handler',
+      code: lambda.Code.fromAsset('.', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
+          command: [
+            'bash', '-c',
+            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+          ],
+        },
+      }),
+    });
+    grantSecretsAccess(smartLoginFunction);
+    authResource.addResource('login').addMethod(
+      'POST',
+      new apigateway.LambdaIntegration(smartLoginFunction)
+    );
+
+    // Local login - email/password authentication
+    const localLoginFunction = new lambda.Function(this, 'LocalLogin', {
+      ...commonLambdaProps,
+      functionName: `${props.targetEnvironment}-mailbox-locallogin`,
+      handler: 'handlers/loginLocal.handler',
+      code: lambda.Code.fromAsset('.', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
+          command: [
+            'bash', '-c',
+            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+          ],
+        },
+      }),
+    });
+    grantSecretsAccess(localLoginFunction);
+    authResource.addResource('login').addResource('local').addMethod(
+      'POST',
+      new apigateway.LambdaIntegration(localLoginFunction)
+    );
+
     const loginCallbackFunction = createPlaceholderFunction('LoginCallback', 'POST /auth/callback');
     grantSecretsAccess(loginCallbackFunction);
     authResource.addResource('callback').addMethod(
       'POST',
       new apigateway.LambdaIntegration(loginCallbackFunction)
+    );
+
+    // Password change - for local auth users
+    const changePasswordFunction = new lambda.Function(this, 'ChangePassword', {
+      ...commonLambdaProps,
+      functionName: `${props.targetEnvironment}-mailbox-changepassword`,
+      handler: 'handlers/changePassword.handler',
+      code: lambda.Code.fromAsset('.', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
+          command: [
+            'bash', '-c',
+            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
+          ],
+        },
+      }),
+    });
+    grantSecretsAccess(changePasswordFunction);
+    authResource.addResource('change-password').addMethod(
+      'POST',
+      new apigateway.LambdaIntegration(changePasswordFunction),
+      { authorizer }
     );
 
     const logoutFunction = createPlaceholderFunction('Logout', 'POST /auth/logout');

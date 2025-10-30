@@ -80,6 +80,60 @@ async function streamToBuffer(stream: any): Promise<Buffer> {
 }
 
 /**
+ * Send temporary password email to a new user
+ * @param email - User's email address
+ * @param temporaryPassword - Generated temporary password
+ * @param userName - User's display name (optional)
+ * @returns Promise resolving to message ID
+ */
+export async function sendTemporaryPasswordEmail(
+  email: string,
+  temporaryPassword: string,
+  userName?: string
+): Promise<string> {
+  const fromEmail = process.env.SES_FROM_EMAIL || 'noreply@submanagementgroup.com';
+
+  const greeting = userName ? `Hello ${userName}` : 'Hello';
+
+  const subject = 'Your Email MFA Platform Account';
+
+  const body = `${greeting},
+
+Your account has been created on the Email MFA Platform.
+
+Your temporary login credentials:
+Email: ${email}
+Password: ${temporaryPassword}
+
+IMPORTANT: You must change this password after your first login.
+
+To access your account:
+1. Go to the Email MFA Platform login page
+2. Enter your email address
+3. Enter the temporary password above
+4. You will be prompted to create a new password
+
+Security tips:
+- Your new password must be at least 12 characters long
+- Include uppercase, lowercase, numbers, and special characters
+- Never share your password with anyone
+- Change your password immediately if you suspect it has been compromised
+
+If you did not request this account or have any questions, please contact your system administrator.
+
+Best regards,
+Email MFA Platform Team
+`;
+
+  return sendEmail({
+    from: fromEmail,
+    to: email,
+    subject,
+    body,
+  });
+}
+
+/**
  * Check if a sender email address is whitelisted
  * Supports wildcard patterns: *.gc.ca, *canadacouncil.ca
  *
