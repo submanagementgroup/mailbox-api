@@ -28,7 +28,7 @@ export const createMailboxSchema = z.object({
   }, {
     message: `Email must be from domain ${process.env.MAILBOX_DOMAIN || 'funding.dev.submanagementgroup.com'}`,
   }),
-  quotaMb: z.number().int().positive().max(51200).optional().default(20480), // 20GB default, max 50GB
+  // quotaMb removed - all mailboxes are 20GB (20480 MB)
 });
 
 export type CreateMailboxInput = z.infer<typeof createMailboxSchema>;
@@ -83,7 +83,10 @@ export type ListMessagesQuery = z.infer<typeof listMessagesQuerySchema>;
 // ============================================
 
 export const addWhitelistSenderSchema = z.object({
-  domain: z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/i, 'Invalid domain format'),
+  domain: z.string().regex(
+    /^(\*\.?)?[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/i,
+    'Invalid domain format. Allowed: domain.com, *.domain.com, *domain.com'
+  ),
 });
 
 export type AddWhitelistSenderInput = z.infer<typeof addWhitelistSenderSchema>;
@@ -109,4 +112,44 @@ export function validateInputSafe<T>(
 
 export function formatValidationError(error: z.ZodError): string {
   return error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+}
+
+// ============================================
+// Domain Matching Utility
+// ============================================
+
+/**
+ * Check if a sender domain matches a whitelist pattern with wildcard support
+ *
+ * @param senderDomain - The sender's domain (e.g., "cca.gc.ca", "historycanadacouncil.ca")
+ * @param whitelistPattern - The whitelist pattern (e.g., "*.gc.ca", "*canadacouncil.ca", "example.com")
+ * @returns true if the sender domain matches the whitelist pattern
+ *
+ * @example
+ * matchesDomainPattern("cca.gc.ca", "*.gc.ca") // true
+ * matchesDomainPattern("gc.ca", "*.gc.ca") // false (*.  requires a subdomain)
+ * matchesDomainPattern("historycanadacouncil.ca", "*canadacouncil.ca") // true
+ * matchesDomainPattern("canadacouncil.ca", "*canadacouncil.ca") // true
+ * matchesDomainPattern("example.com", "example.com") // true (exact match)
+ */
+export function matchesDomainPattern(senderDomain: string, whitelistPattern: string): boolean {
+  const sender = senderDomain.toLowerCase();
+  const pattern = whitelistPattern.toLowerCase();
+
+  // Wildcard subdomain pattern: *.domain.com
+  if (pattern.startsWith('*.')) {
+    const baseDomain = pattern.substring(2); // Remove "*."
+    // Must end with .baseDomain (requires at least one subdomain level)
+    return sender.endsWith('.' + baseDomain) && sender !== baseDomain;
+  }
+
+  // Wildcard prefix pattern: *domain.com (no dot after asterisk)
+  if (pattern.startsWith('*')) {
+    const suffix = pattern.substring(1); // Remove "*"
+    // Must end with the suffix (can be exact match or have prefix)
+    return sender.endsWith(suffix);
+  }
+
+  // Exact match
+  return sender === pattern;
 }

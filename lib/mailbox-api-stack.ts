@@ -362,11 +362,52 @@ exports.handler = async (event) => {
     const whitelistResource = adminResource.addResource('whitelist');
 
     const sendersResource = whitelistResource.addResource('senders');
+
+    // GET /admin/whitelist/senders
     const listWhitelistSendersFunction = createPlaceholderFunction('ListWhitelistSenders', 'GET /admin/whitelist/senders');
     grantSecretsAccess(listWhitelistSendersFunction);
     sendersResource.addMethod(
       'GET',
       new apigateway.LambdaIntegration(listWhitelistSendersFunction),
+      { authorizer }
+    );
+
+    // POST /admin/whitelist/senders
+    const addWhitelistSenderFunction = new lambda.Function(this, 'AddWhitelistSender', {
+      ...commonLambdaProps,
+      functionName: `${props.targetEnvironment}-mailbox-addwhitelistsender`,
+      handler: 'handlers/addWhitelistSender.handler',
+      code: lambda.Code.fromAsset('src', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          command: ['bash', '-c', 'npm install && cp -r . /asset-output/'],
+        },
+      }),
+    });
+    grantSecretsAccess(addWhitelistSenderFunction);
+    sendersResource.addMethod(
+      'POST',
+      new apigateway.LambdaIntegration(addWhitelistSenderFunction),
+      { authorizer }
+    );
+
+    // DELETE /admin/whitelist/senders/{id}
+    const senderIdResource = sendersResource.addResource('{id}');
+    const deleteWhitelistSenderFunction = new lambda.Function(this, 'DeleteWhitelistSender', {
+      ...commonLambdaProps,
+      functionName: `${props.targetEnvironment}-mailbox-deletewhitelistsender`,
+      handler: 'handlers/deleteWhitelistSender.handler',
+      code: lambda.Code.fromAsset('src', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          command: ['bash', '-c', 'npm install && cp -r . /asset-output/'],
+        },
+      }),
+    });
+    grantSecretsAccess(deleteWhitelistSenderFunction);
+    senderIdResource.addMethod(
+      'DELETE',
+      new apigateway.LambdaIntegration(deleteWhitelistSenderFunction),
       { authorizer }
     );
 

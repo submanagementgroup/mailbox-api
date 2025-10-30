@@ -240,11 +240,23 @@ app.get('/admin/whitelist/senders', async (req, res) => {
 
 app.post('/admin/whitelist/senders', async (req, res) => {
   try {
-    // Placeholder - implement whitelist handler
-    res.json({ success: true });
+    const { handler } = await import('./src/handlers/addWhitelistSender.ts');
+    const result = await handler(createLambdaEvent(req));
+    sendLambdaResponse(res, result);
   } catch (error: any) {
     console.error('Error in add whitelist sender:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+});
+
+app.delete('/admin/whitelist/senders/:id', async (req, res) => {
+  try {
+    const { handler } = await import('./src/handlers/deleteWhitelistSender.ts');
+    const result = await handler(createLambdaEvent(req));
+    sendLambdaResponse(res, result);
+  } catch (error: any) {
+    console.error('Error in delete whitelist sender:', error);
+    res.status(500).json({ error: error.message, stack: error.stack });
   }
 });
 

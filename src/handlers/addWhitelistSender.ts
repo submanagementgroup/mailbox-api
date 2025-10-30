@@ -4,54 +4,53 @@ import { requireAdmin } from '../middleware/authorize';
 import { successResponse, handleError } from '../middleware/security';
 import { insert } from '../config/database';
 import { logAudit, AuditAction } from '../services/auditLogger';
-import { validateInput, createMailboxSchema } from '../utils/validation';
-
-const QUOTA_MB = 20480; // 20GB fixed for all mailboxes
+import { validateInput, addWhitelistSenderSchema } from '../utils/validation';
 
 /**
- * POST /admin/mailboxes
- * Create a new mailbox (admin only)
+ * POST /admin/whitelist/senders
+ * Add a whitelisted sender domain (with wildcard support)
+ * Requires SYSTEM_ADMIN role
+ *
+ * Supports:
+ * - Exact domain: "canadacouncil.ca"
+ * - Subdomain wildcard: "*.gc.ca" (matches sub.gc.ca but not gc.ca)
+ * - Prefix wildcard: "*canadacouncil.ca" (matches historycanadacouncil.ca and canadacouncil.ca)
  */
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
-    // Authenticate and authorize
     const user = await authenticate(event);
     requireAdmin(user);
 
     // Validate request body
     const body = event.body ? JSON.parse(event.body) : {};
-    const input = validateInput(createMailboxSchema, body);
+    const input = validateInput(addWhitelistSenderSchema, body);
 
-    // Create mailbox in database
-    const mailboxId = await insert(
-      `INSERT INTO mailboxes (email_address, quota_mb, is_active, created_by)
-       VALUES (?, ?, ?, ?)`,
-      [input.emailAddress, QUOTA_MB, true, user.entraId]
+    // Insert whitelisted sender domain
+    const id = await insert(
+      `INSERT INTO whitelisted_senders (domain, added_by)
+       VALUES (?, ?)`,
+      [input.domain, user.entraId]
     );
 
     // Log audit event
     await logAudit({
       entraUserId: user.entraId,
       userEmail: user.email,
-      action: AuditAction.CREATE_MAILBOX,
-      resourceType: 'mailbox',
-      resourceId: mailboxId,
+      action: AuditAction.ADD_WHITELISTED_SENDER,
+      resourceType: 'whitelist_sender',
+      resourceId: id,
       details: {
-        emailAddress: input.emailAddress,
-        quotaMb: QUOTA_MB,
+        domain: input.domain,
       },
       ipAddress: event.requestContext.identity.sourceIp,
       userAgent: event.requestContext.identity.userAgent,
     });
 
-    // Return success response
     return successResponse(
       {
-        id: mailboxId,
-        emailAddress: input.emailAddress,
-        quotaMb: QUOTA_MB,
-        isActive: true,
-        message: 'Mailbox created successfully',
+        id,
+        domain: input.domain,
+        message: 'Whitelisted sender domain added successfully',
       },
       201
     );

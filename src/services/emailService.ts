@@ -2,6 +2,8 @@ import { SESClient, SendEmailCommand, SendRawEmailCommand } from '@aws-sdk/clien
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { simpleParser, ParsedMail } from 'mailparser';
 import { ParsedEmail } from '../utils/types';
+import { queryRows } from '../config/database';
+import { matchesDomainPattern } from '../utils/validation';
 
 /**
  * Email service for sending and parsing emails
@@ -75,4 +77,37 @@ async function streamToBuffer(stream: any): Promise<Buffer> {
     chunks.push(chunk);
   }
   return Buffer.concat(chunks);
+}
+
+/**
+ * Check if a sender email address is whitelisted
+ * Supports wildcard patterns: *.gc.ca, *canadacouncil.ca
+ *
+ * @param senderEmail - Full email address (e.g., "user@cca.gc.ca")
+ * @returns true if the sender's domain matches any whitelisted pattern
+ *
+ * @example
+ * await isSenderWhitelisted("user@cca.gc.ca") // true if *.gc.ca is whitelisted
+ * await isSenderWhitelisted("user@historycanadacouncil.ca") // true if *canadacouncil.ca is whitelisted
+ */
+export async function isSenderWhitelisted(senderEmail: string): Promise<boolean> {
+  // Extract domain from email address
+  const domain = senderEmail.split('@')[1];
+  if (!domain) {
+    return false;
+  }
+
+  // Fetch all whitelisted sender patterns from database
+  const whitelistedPatterns = await queryRows<{ domain: string }>(
+    'SELECT domain FROM whitelisted_senders'
+  );
+
+  // Check if sender domain matches any whitelisted pattern
+  for (const pattern of whitelistedPatterns) {
+    if (matchesDomainPattern(domain, pattern.domain)) {
+      return true;
+    }
+  }
+
+  return false;
 }
