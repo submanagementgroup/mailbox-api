@@ -341,12 +341,12 @@ exports.handler = async (event) => {
       ...commonLambdaProps,
       functionName: `${props.targetEnvironment}-mailbox-createmailbox`,
       handler: 'handlers/createMailbox.handler',
-      code: lambda.Code.fromAsset('src', {
+      code: lambda.Code.fromAsset('.', {
         bundling: {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
           command: [
             'bash', '-c',
-            'npm install && cp -r . /asset-output/',
+            'npm ci --omit=dev && cp -r src/* /asset-output/ && cp -r node_modules /asset-output/',
           ],
         },
       }),
@@ -377,10 +377,13 @@ exports.handler = async (event) => {
       ...commonLambdaProps,
       functionName: `${props.targetEnvironment}-mailbox-addwhitelistsender`,
       handler: 'handlers/addWhitelistSender.handler',
-      code: lambda.Code.fromAsset('src', {
+      code: lambda.Code.fromAsset('.', {
         bundling: {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
-          command: ['bash', '-c', 'npm install && cp -r . /asset-output/'],
+          command: [
+            'bash', '-c',
+            'npm ci --omit=dev && cp -r src/* /asset-output/ && cp -r node_modules /asset-output/',
+          ],
         },
       }),
     });
@@ -397,10 +400,13 @@ exports.handler = async (event) => {
       ...commonLambdaProps,
       functionName: `${props.targetEnvironment}-mailbox-deletewhitelistsender`,
       handler: 'handlers/deleteWhitelistSender.handler',
-      code: lambda.Code.fromAsset('src', {
+      code: lambda.Code.fromAsset('.', {
         bundling: {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
-          command: ['bash', '-c', 'npm install && cp -r . /asset-output/'],
+          command: [
+            'bash', '-c',
+            'npm ci --omit=dev && cp -r src/* /asset-output/ && cp -r node_modules /asset-output/',
+          ],
         },
       }),
     });
