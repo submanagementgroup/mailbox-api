@@ -346,7 +346,7 @@ exports.handler = async (event) => {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
           command: [
             'bash', '-c',
-            'npm ci --omit=dev && cp -r src/* /asset-output/ && cp -r node_modules /asset-output/',
+            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
           ],
         },
       }),
@@ -382,7 +382,7 @@ exports.handler = async (event) => {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
           command: [
             'bash', '-c',
-            'npm ci --omit=dev && cp -r src/* /asset-output/ && cp -r node_modules /asset-output/',
+            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
           ],
         },
       }),
@@ -405,7 +405,7 @@ exports.handler = async (event) => {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
           command: [
             'bash', '-c',
-            'npm ci --omit=dev && cp -r src/* /asset-output/ && cp -r node_modules /asset-output/',
+            'cp -r /asset-input/src/* /asset-output/ && cp -r /asset-input/node_modules /asset-output/',
           ],
         },
       }),
