@@ -4,7 +4,11 @@ import {
   UpdateReceiptRuleCommand,
   DeleteReceiptRuleCommand,
   DescribeReceiptRuleCommand,
+  DescribeReceiptRuleSetCommand,
+  CreateReceiptRuleSetCommand,
+  SetActiveReceiptRuleSetCommand,
   RuleDoesNotExistException,
+  RuleSetDoesNotExistException,
   AlreadyExistsException,
   ReceiptRule,
 } from '@aws-sdk/client-ses';
@@ -115,7 +119,56 @@ export async function handler(event: CloudFormationCustomResourceEvent): Promise
   }
 }
 
+/**
+ * Ensure the receipt rule set exists and is active
+ * Creates it if it doesn't exist
+ */
+async function ensureRuleSetExists(ruleSetName: string): Promise<void> {
+  // Check if rule set exists
+  try {
+    await sesClient.send(
+      new DescribeReceiptRuleSetCommand({
+        RuleSetName: ruleSetName,
+      })
+    );
+    console.log(`Rule set '${ruleSetName}' already exists`);
+  } catch (error: any) {
+    if (error instanceof RuleSetDoesNotExistException) {
+      // Rule set doesn't exist, create it
+      console.log(`Creating rule set '${ruleSetName}'...`);
+      try {
+        await sesClient.send(
+          new CreateReceiptRuleSetCommand({
+            RuleSetName: ruleSetName,
+          })
+        );
+        console.log(`Rule set '${ruleSetName}' created successfully`);
+      } catch (createError: any) {
+        if (createError instanceof AlreadyExistsException) {
+          console.log('Rule set already exists (race condition), continuing...');
+        } else {
+          throw createError;
+        }
+      }
+    } else {
+      throw error;
+    }
+  }
+
+  // Set as active rule set
+  console.log(`Setting '${ruleSetName}' as active rule set...`);
+  await sesClient.send(
+    new SetActiveReceiptRuleSetCommand({
+      RuleSetName: ruleSetName,
+    })
+  );
+  console.log(`Rule set '${ruleSetName}' is now active`);
+}
+
 async function createReceiptRule(props: CloudFormationCustomResourceEvent['ResourceProperties']): Promise<void> {
+  // Ensure rule set exists and is active first
+  await ensureRuleSetExists(props.RuleSetName);
+
   // Check if rule already exists (idempotency)
   try {
     const existing = await sesClient.send(

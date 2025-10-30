@@ -177,6 +177,9 @@ exports.handler = async (event) => {
           'ses:DeleteReceiptRule',
           'ses:DescribeReceiptRule',
           'ses:DescribeReceiptRuleSet',
+          'ses:CreateReceiptRuleSet',
+          'ses:SetActiveReceiptRuleSet',
+          'ses:DescribeActiveReceiptRuleSet',
         ],
         resources: ['*'], // SES doesn't support resource-level permissions for receipt rules
       })
