@@ -189,25 +189,20 @@ exports.handler = async (event) => {
     const authResource = this.api.root.addResource('auth');
 
     // Smart login - auto-detects auth method (SSO vs local)
-    const smartLoginFunction = new lambda.Function(this, 'SmartLogin', {
-      ...commonLambdaProps,
+    const smartLoginFunction = new NodejsFunction(this, 'SmartLogin', {
+      runtime: lambda.Runtime.NODEJS_22_X,
       functionName: `${props.targetEnvironment}-mailbox-smartlogin`,
-      handler: 'handlers/login.handler',
-      code: lambda.Code.fromAsset('.', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
-          command: [
-            'bash', '-c',
-            [
-              'cp -r /asset-input/src /asset-output/',
-              'cp /asset-input/package*.json /asset-output/',
-              'cd /asset-output',
-              'npm ci --omit=dev --ignore-scripts',
-              'rm -f package*.json',
-            ].join(' && '),
-          ],
-        },
-      }),
+      entry: 'src/handlers/login.ts',
+      handler: 'handler',
+      timeout: commonLambdaProps.timeout,
+      memorySize: commonLambdaProps.memorySize,
+      environment: commonLambdaProps.environment,
+      vpc: commonLambdaProps.vpc,
+      securityGroups: commonLambdaProps.securityGroups,
+      logRetention: commonLambdaProps.logRetention,
+      tracing: commonLambdaProps.tracing,
+      architecture: commonLambdaProps.architecture,
+      bundling: { minify: true, sourceMap: false, target: 'node22', externalModules: [] },
     });
     grantSecretsAccess(smartLoginFunction);
     const loginResource = authResource.addResource('login');
@@ -217,25 +212,20 @@ exports.handler = async (event) => {
     );
 
     // Local login - email/password authentication
-    const localLoginFunction = new lambda.Function(this, 'LocalLogin', {
-      ...commonLambdaProps,
+    const localLoginFunction = new NodejsFunction(this, 'LocalLogin', {
+      runtime: lambda.Runtime.NODEJS_22_X,
       functionName: `${props.targetEnvironment}-mailbox-locallogin`,
-      handler: 'handlers/loginLocal.handler',
-      code: lambda.Code.fromAsset('.', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
-          command: [
-            'bash', '-c',
-            [
-              'cp -r /asset-input/src /asset-output/',
-              'cp /asset-input/package*.json /asset-output/',
-              'cd /asset-output',
-              'npm ci --omit=dev --ignore-scripts',
-              'rm -f package*.json',
-            ].join(' && '),
-          ],
-        },
-      }),
+      entry: 'src/handlers/loginLocal.ts',
+      handler: 'handler',
+      timeout: commonLambdaProps.timeout,
+      memorySize: commonLambdaProps.memorySize,
+      environment: commonLambdaProps.environment,
+      vpc: commonLambdaProps.vpc,
+      securityGroups: commonLambdaProps.securityGroups,
+      logRetention: commonLambdaProps.logRetention,
+      tracing: commonLambdaProps.tracing,
+      architecture: commonLambdaProps.architecture,
+      bundling: { minify: true, sourceMap: false, target: 'node22', externalModules: [] },
     });
     grantSecretsAccess(localLoginFunction);
     loginResource.addResource('local').addMethod(
@@ -244,25 +234,20 @@ exports.handler = async (event) => {
     );
 
     // Auth callback - Enterprise App SSO flow
-    const authCallbackFunction = new lambda.Function(this, 'AuthCallback', {
-      ...commonLambdaProps,
+    const authCallbackFunction = new NodejsFunction(this, 'AuthCallback', {
+      runtime: lambda.Runtime.NODEJS_22_X,
       functionName: `${props.targetEnvironment}-mailbox-authcallback`,
-      handler: 'handlers/authCallback.handler',
-      code: lambda.Code.fromAsset('.', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
-          command: [
-            'bash', '-c',
-            [
-              'cp -r /asset-input/src /asset-output/',
-              'cp /asset-input/package*.json /asset-output/',
-              'cd /asset-output',
-              'npm ci --omit=dev --ignore-scripts',
-              'rm -f package*.json',
-            ].join(' && '),
-          ],
-        },
-      }),
+      entry: 'src/handlers/authCallback.ts',
+      handler: 'handler',
+      timeout: commonLambdaProps.timeout,
+      memorySize: commonLambdaProps.memorySize,
+      environment: commonLambdaProps.environment,
+      vpc: commonLambdaProps.vpc,
+      securityGroups: commonLambdaProps.securityGroups,
+      logRetention: commonLambdaProps.logRetention,
+      tracing: commonLambdaProps.tracing,
+      architecture: commonLambdaProps.architecture,
+      bundling: { minify: true, sourceMap: false, target: 'node22', externalModules: [] },
     });
     grantSecretsAccess(authCallbackFunction);
     authResource.addResource('callback').addMethod(
@@ -271,25 +256,20 @@ exports.handler = async (event) => {
     );
 
     // Password change - for local auth users
-    const changePasswordFunction = new lambda.Function(this, 'ChangePassword', {
-      ...commonLambdaProps,
+    const changePasswordFunction = new NodejsFunction(this, 'ChangePassword', {
+      runtime: lambda.Runtime.NODEJS_22_X,
       functionName: `${props.targetEnvironment}-mailbox-changepassword`,
-      handler: 'handlers/changePassword.handler',
-      code: lambda.Code.fromAsset('.', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
-          command: [
-            'bash', '-c',
-            [
-              'cp -r /asset-input/src /asset-output/',
-              'cp /asset-input/package*.json /asset-output/',
-              'cd /asset-output',
-              'npm ci --omit=dev --ignore-scripts',
-              'rm -f package*.json',
-            ].join(' && '),
-          ],
-        },
-      }),
+      entry: 'src/handlers/changePassword.ts',
+      handler: 'handler',
+      timeout: commonLambdaProps.timeout,
+      memorySize: commonLambdaProps.memorySize,
+      environment: commonLambdaProps.environment,
+      vpc: commonLambdaProps.vpc,
+      securityGroups: commonLambdaProps.securityGroups,
+      logRetention: commonLambdaProps.logRetention,
+      tracing: commonLambdaProps.tracing,
+      architecture: commonLambdaProps.architecture,
+      bundling: { minify: true, sourceMap: false, target: 'node22', externalModules: [] },
     });
     grantSecretsAccess(changePasswordFunction);
     authResource.addResource('change-password').addMethod(
@@ -422,25 +402,20 @@ exports.handler = async (event) => {
     // Mailbox management (admin)
     const adminMailboxesResource = adminResource.addResource('mailboxes');
 
-    const createMailboxFunction = new lambda.Function(this, 'CreateMailbox', {
-      ...commonLambdaProps,
+    const createMailboxFunction = new NodejsFunction(this, 'CreateMailbox', {
+      runtime: lambda.Runtime.NODEJS_22_X,
       functionName: `${props.targetEnvironment}-mailbox-createmailbox`,
-      handler: 'handlers/createMailbox.handler',
-      code: lambda.Code.fromAsset('.', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
-          command: [
-            'bash', '-c',
-            [
-              'cp -r /asset-input/src /asset-output/',
-              'cp /asset-input/package*.json /asset-output/',
-              'cd /asset-output',
-              'npm ci --omit=dev --ignore-scripts',
-              'rm -f package*.json',
-            ].join(' && '),
-          ],
-        },
-      }),
+      entry: 'src/handlers/createMailbox.ts',
+      handler: 'handler',
+      timeout: commonLambdaProps.timeout,
+      memorySize: commonLambdaProps.memorySize,
+      environment: commonLambdaProps.environment,
+      vpc: commonLambdaProps.vpc,
+      securityGroups: commonLambdaProps.securityGroups,
+      logRetention: commonLambdaProps.logRetention,
+      tracing: commonLambdaProps.tracing,
+      architecture: commonLambdaProps.architecture,
+      bundling: { minify: true, sourceMap: false, target: 'node22', externalModules: [] },
     });
     grantSecretsAccess(createMailboxFunction);
     adminMailboxesResource.addMethod(
@@ -464,25 +439,20 @@ exports.handler = async (event) => {
     );
 
     // POST /admin/whitelist/senders
-    const addWhitelistSenderFunction = new lambda.Function(this, 'AddWhitelistSender', {
-      ...commonLambdaProps,
+    const addWhitelistSenderFunction = new NodejsFunction(this, 'AddWhitelistSender', {
+      runtime: lambda.Runtime.NODEJS_22_X,
       functionName: `${props.targetEnvironment}-mailbox-addwhitelistsender`,
-      handler: 'handlers/addWhitelistSender.handler',
-      code: lambda.Code.fromAsset('.', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
-          command: [
-            'bash', '-c',
-            [
-              'cp -r /asset-input/src /asset-output/',
-              'cp /asset-input/package*.json /asset-output/',
-              'cd /asset-output',
-              'npm ci --omit=dev --ignore-scripts',
-              'rm -f package*.json',
-            ].join(' && '),
-          ],
-        },
-      }),
+      entry: 'src/handlers/addWhitelistSender.ts',
+      handler: 'handler',
+      timeout: commonLambdaProps.timeout,
+      memorySize: commonLambdaProps.memorySize,
+      environment: commonLambdaProps.environment,
+      vpc: commonLambdaProps.vpc,
+      securityGroups: commonLambdaProps.securityGroups,
+      logRetention: commonLambdaProps.logRetention,
+      tracing: commonLambdaProps.tracing,
+      architecture: commonLambdaProps.architecture,
+      bundling: { minify: true, sourceMap: false, target: 'node22', externalModules: [] },
     });
     grantSecretsAccess(addWhitelistSenderFunction);
     sendersResource.addMethod(
@@ -493,25 +463,20 @@ exports.handler = async (event) => {
 
     // DELETE /admin/whitelist/senders/{id}
     const senderIdResource = sendersResource.addResource('{id}');
-    const deleteWhitelistSenderFunction = new lambda.Function(this, 'DeleteWhitelistSender', {
-      ...commonLambdaProps,
+    const deleteWhitelistSenderFunction = new NodejsFunction(this, 'DeleteWhitelistSender', {
+      runtime: lambda.Runtime.NODEJS_22_X,
       functionName: `${props.targetEnvironment}-mailbox-deletewhitelistsender`,
-      handler: 'handlers/deleteWhitelistSender.handler',
-      code: lambda.Code.fromAsset('.', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
-          command: [
-            'bash', '-c',
-            [
-              'cp -r /asset-input/src /asset-output/',
-              'cp /asset-input/package*.json /asset-output/',
-              'cd /asset-output',
-              'npm ci --omit=dev --ignore-scripts',
-              'rm -f package*.json',
-            ].join(' && '),
-          ],
-        },
-      }),
+      entry: 'src/handlers/deleteWhitelistSender.ts',
+      handler: 'handler',
+      timeout: commonLambdaProps.timeout,
+      memorySize: commonLambdaProps.memorySize,
+      environment: commonLambdaProps.environment,
+      vpc: commonLambdaProps.vpc,
+      securityGroups: commonLambdaProps.securityGroups,
+      logRetention: commonLambdaProps.logRetention,
+      tracing: commonLambdaProps.tracing,
+      architecture: commonLambdaProps.architecture,
+      bundling: { minify: true, sourceMap: false, target: 'node22', externalModules: [] },
     });
     grantSecretsAccess(deleteWhitelistSenderFunction);
     senderIdResource.addMethod(
