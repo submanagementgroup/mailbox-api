@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
@@ -75,25 +76,26 @@ export class MailboxApiStack extends cdk.Stack {
     // ============================================
     // JWT AUTHORIZER LAMBDA
     // ============================================
-    this.authorizerFunction = new lambda.Function(this, 'Authorizer', {
-      ...commonLambdaProps,
+    // Use NodejsFunction with esbuild for tree-shaking (authorizer only needs jsonwebtoken + jwks-rsa)
+    this.authorizerFunction = new NodejsFunction(this, 'Authorizer', {
+      runtime: lambda.Runtime.NODEJS_22_X,
       functionName: `${props.targetEnvironment}-mailbox-authorizer`,
-      handler: 'handlers/authorizer.handler',
-      code: lambda.Code.fromAsset('.', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_22_X.bundlingImage,
-          command: [
-            'bash', '-c',
-            [
-              'cp -r /asset-input/src /asset-output/',
-              'cp /asset-input/package*.json /asset-output/',
-              'cd /asset-output',
-              'npm ci --omit=dev --ignore-scripts',
-              'rm -f package*.json',
-            ].join(' && '),
-          ],
-        },
-      }),
+      entry: 'src/handlers/authorizer.ts',
+      handler: 'handler',
+      timeout: commonLambdaProps.timeout,
+      memorySize: commonLambdaProps.memorySize,
+      environment: commonLambdaProps.environment,
+      vpc: commonLambdaProps.vpc,
+      securityGroups: commonLambdaProps.securityGroups,
+      logRetention: commonLambdaProps.logRetention,
+      tracing: commonLambdaProps.tracing,
+      architecture: commonLambdaProps.architecture,
+      bundling: {
+        minify: true,
+        sourceMap: false,
+        target: 'node22',
+        externalModules: [], // Bundle everything for Lambda
+      },
     });
 
     // Grant authorizer access to secrets (for JWT validation keys)
