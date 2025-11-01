@@ -391,7 +391,21 @@ exports.handler = async (event) => {
       { authorizer }
     );
 
-    const createUserFunction = createPlaceholderFunction('CreateUser', 'POST /admin/users');
+    const createUserFunction = new NodejsFunction(this, 'CreateUser', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      functionName: `${props.targetEnvironment}-mailbox-createuser`,
+      entry: 'src/handlers/createUser.ts',
+      handler: 'handler',
+      timeout: commonLambdaProps.timeout,
+      memorySize: commonLambdaProps.memorySize,
+      environment: commonLambdaProps.environment,
+      vpc: commonLambdaProps.vpc,
+      securityGroups: commonLambdaProps.securityGroups,
+      logRetention: commonLambdaProps.logRetention,
+      tracing: commonLambdaProps.tracing,
+      architecture: commonLambdaProps.architecture,
+      bundling: { minify: true, sourceMap: false, target: 'node22', externalModules: [] },
+    });
     grantSecretsAccess(createUserFunction);
     usersResource.addMethod(
       'POST',
